@@ -1,0 +1,5 @@
+Last updated 12/19/2019
+dotNet agent - 4.5.18.0
+java agent - 4.5.17.28908
+machine agent - 4.5.16.2357
+netVis agent - 4.5.10.2050

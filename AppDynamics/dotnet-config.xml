@@ -1,0 +1,76 @@
+<winston>
+  <logFileFolderAccessPermissions defaultAccountsEnabled="false">
+    <account name="NT AUTHORITY\LOCAL SERVICE" displayName="LOCAL SERVICE" />
+    <account name="NT AUTHORITY\SYSTEM" displayName="SYSTEM" />
+    <account name="NT AUTHORITY\NETWORK SERVICE" displayName="NETWORK SERVICE" />
+    <account name="IIS_IUSRS" displayName="ApplicationPool Identity" />
+  </logFileFolderAccessPermissions>
+  <appdynamics-agent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <controller host="some-host.gov" port="8090" ssl="false">
+		<account name="customer1" password="b49623b8-2af9-4552-91ce-1da0b78c014e" />
+		<applications>
+			<!-- if an app is not found in a manual config below, it will connect to a default -->
+			<application name="Application1" default="true" />
+			<!-- <application name="Application2" /> -->
+		</applications>
+    </controller>
+    <machine-agent />
+    <app-agents>
+	<IIS>
+		<automatic />
+		<!-- the application pools way 
+		<application-pools>
+			<application-pool name="pool1" controller-application="Application1">
+				<tier name="pool1"/>
+			</application-pool>
+
+			<application-pool name="pool2" controller-application="Application2">
+				<tier name="pool2"/>
+			</application-pool>
+		</application-pools>
+		-->
+		
+		<!-- the application sites way 
+		<applications>
+			<application path="/" site="FirstSite" controller-application="Application1">
+				<tier name="FirstSite Tier"/>
+			</application>
+			<application path="/" site="SecondSite" controller-application="Application2">
+				<tier name="SecondSite Tier"/>
+			</application>
+		</applications>
+		
+		-->
+	</IIS>
+	<!-- the standalone-applications way 
+	<standalone-applications>
+		<standalone-application executable="MyStandaloneApp.exe" controller-application="Application1">
+			<tier name="Standalone App Tier"/>
+		</standalone-application>
+		<standalone-application executable="MyWindowsService.exe" command-line="-x" controller-application="Application2">
+			<tier name="Windows Service Tier"/>
+		</standalone-application>
+	</standalone-applications>
+	-->
+	
+    </app-agents>
+  </appdynamics-agent>
+</winston>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
