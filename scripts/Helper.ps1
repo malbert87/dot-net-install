@@ -1,4 +1,4 @@
-﻿$scriptDir = Split-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Definition -Parent) -Parent
+$scriptDir = Split-Path -Path (Split-Path -Path $MyInvocation.MyCommand.Definition -Parent) -Parent
 #$scriptDir= (Get-Item (Get-ScriptDirectory)).parent.parent.FullName
 # Reading configs.ini file into variables
 Get-Content "$scriptDir\configs.ini" | foreach-object -begin { $h = @{ } } -process { $k = [regex]::split($_, '='); if (($k[0].CompareTo("") -ne 0) -and ($k[0].StartsWith("[") -ne $True) -and ($k[0].StartsWith("#") -ne $True)) { $h.Add($k[0], $k[1]) } }
@@ -149,7 +149,7 @@ ELSE {
         }
         else {
             Write-Output "Couldn't find binary downloader..."
-        }
+        }y
     }
     Expand-Archive -Path $machine_zip -DestinationPath "$scriptDir\AppDynamics\machineagent"
 }
@@ -174,7 +174,7 @@ ELSE {
         else {
             Write-Output "Couldn't find binary downloader..."
         }
-    }
+    }Invoke-History
     $dotnet_default_msi = Resolve-Path $dotnet_default_msi
     Rename-Item -Path $dotnet_default_msi -NewName "dotNetAgentSetup.msi"
 
@@ -189,8 +189,6 @@ $accAccessKey = $h.Get_Item("account-access-key")
 $accName = $h.Get_Item("account-name")
 $globalAccName = $h.Get_Item("global-account-name")
 $appName = $h.Get_Item("application-name")
-$tierName = $h.Get_Item("tier-name")
-$nodeName = $h.Get_Item("node-name")
 $simEnabled = $h.Get_Item("sim-enabled")
 $dotnetMode = $h.Get_Item("dotnet-compatibility-mode")
 $machinePath = $h.Get_Item("machine-hierarchy")
