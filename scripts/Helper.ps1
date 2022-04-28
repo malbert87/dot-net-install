@@ -174,7 +174,7 @@ ELSE {
         else {
             Write-Output "Couldn't find binary downloader..."
         }
-    }Invoke-History
+    }
     $dotnet_default_msi = Resolve-Path $dotnet_default_msi
     Rename-Item -Path $dotnet_default_msi -NewName "dotNetAgentSetup.msi"
 
