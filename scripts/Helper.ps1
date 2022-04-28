@@ -118,17 +118,17 @@ function Set-XmlElementsAttributeValue([ xml ]$XmlDocument, [string]$ElementPath
 # Check if agent binary downloader file exists
 $binary_downloader = "$scriptDir\scripts\appd-downloader.exe"
 if ( -Not [System.IO.File]::Exists($binary_downloader)) {
-    Invoke-WebRequest -Uri "https://github.com/malbert87/appd-agent-download/raw/master/cmd/appd-downloader/appd-downloader.exe" -OutFile "$binary_downloader"
+    Invoke-WebRequest -Uri "https://github.com/csek06/appd-binary-downloader/raw/master/cmd/appd-downloader/appd-downloader.exe" -OutFile "$binary_downloader"
 }
 
 
 # Check if binaries have been unzipped/renamed or not...
 $machine_config = "$scriptDir\AppDynamics\machineagent\conf\controller-info.xml"
 $machine_zip = "$scriptDir\AppDynamics\machineagent-bundle-64bit-windows-*.zip"
-# $java_config = "$scriptDir\AppDynamics\javaagent\conf\controller-info.xml"
-# $java_zip = "$scriptDir\AppDynamics\AppServerAgent-*.zip"
-# $NetViz_msi_path = "$scriptDir\AppDynamics\appd-netviz-agent.msi"
-# $netviz_default_msi = "$scriptDir\AppDynamics\appd-netviz-agent-*.msi"
+$java_config = "$scriptDir\AppDynamics\javaagent\conf\controller-info.xml"
+$java_zip = "$scriptDir\AppDynamics\AppServerAgent-*.zip"
+$NetViz_msi_path = "$scriptDir\AppDynamics\appd-netviz-agent.msi"
+$netviz_default_msi = "$scriptDir\AppDynamics\appd-netviz-agent-*.msi"
 $dotnet_Installer = "$scriptDir\AppDynamics\dotNetAgentSetup.msi"
 $dotnet_default_msi = "$scriptDir\AppDynamics\dotNetAgentSetup64*.msi"
 IF ([System.IO.File]::Exists($machine_config)) {
@@ -149,12 +149,55 @@ ELSE {
         }
         else {
             Write-Output "Couldn't find binary downloader..."
-        }y
+        }
     }
     Expand-Archive -Path $machine_zip -DestinationPath "$scriptDir\AppDynamics\machineagent"
 }
-
-
+IF ([System.IO.File]::Exists($java_config)) {
+    # Existing Java Agent Installer Found
+}
+ELSE {
+    Write-Output "No existing Java Agent installer found, checking if zip is available locally..."
+    IF (Test-Path $java_zip) {
+        Write-Output "Found locally, unzipping"
+    }
+    ELSE { 
+        Write-Output "No local Java Agent zip found..."
+        if ([System.IO.File]::Exists($binary_downloader)) {
+            Write-Output "Attempting to Download Java Agent..."
+            $params = "-automate -java -o=$scriptDir\AppDynamics"
+            Start-Process $binary_downloader -ArgumentList $params -Wait
+            Write-Output "Downloaded and now unzipping"
+        }
+        else {
+            Write-Output "Couldn't find binary downloader..."
+        }
+    }
+    Expand-Archive -Path $java_zip -DestinationPath "$scriptDir\AppDynamics\javaagent"
+}
+IF (Test-Path $NetViz_msi_path) {
+    # Existing NetViz Agent Installer Found
+}
+ELSE {
+    Write-Output "No existing NetViz Agent installer found, checking if msi is available locally to rename..."
+    IF (Test-Path $netviz_default_msi) {
+        Write-Output "Found locally, renaming"
+    }
+    ELSE {
+        Write-Output "No local NetViz Agent msi found..."
+        if ([System.IO.File]::Exists($binary_downloader)) {
+            Write-Output "Attempting to Download NetViz Agent..."
+            $params = "-automate -netviz -o=$scriptDir\AppDynamics"
+            Start-Process $binary_downloader -ArgumentList $params -Wait
+            Write-Output "Downloaded and now renaming"
+        }
+        else {
+            Write-Output "Couldn't find binary downloader..."
+        }
+    }
+    $netviz_default_msi = Resolve-Path $netviz_default_msi
+    Rename-Item -Path $netviz_default_msi -NewName "appd-netviz-agent.msi"
+}
 IF (Test-Path $dotnet_Installer) {
     # Existing dotNet Agent Installer Found
 }
@@ -189,6 +232,8 @@ $accAccessKey = $h.Get_Item("account-access-key")
 $accName = $h.Get_Item("account-name")
 $globalAccName = $h.Get_Item("global-account-name")
 $appName = $h.Get_Item("application-name")
+$tierName = $h.Get_Item("tier-name")
+$nodeName = $h.Get_Item("node-name")
 $simEnabled = $h.Get_Item("sim-enabled")
 $dotnetMode = $h.Get_Item("dotnet-compatibility-mode")
 $machinePath = $h.Get_Item("machine-hierarchy")
@@ -219,6 +264,24 @@ IF ([System.IO.File]::Exists($machine_config)) {
     $XmlWriter.Close()
 }
 
+# Modifying the java agent conf file settings
+IF ([System.IO.File]::Exists($java_config)) {
+    $java_xml = New-Object System.Xml.XmlDocument
+    $java_xml.PreserveWhitespace = $true
+    $java_xml.Load($java_config)
+    Set-XmlElementsTextValue -XmlDocument $java_xml -ElementPath "controller-info.account-name" -TextValue $accName
+    Set-XmlElementsTextValue -XmlDocument $java_xml -ElementPath "controller-info.controller-host" -TextValue $contHost
+    Set-XmlElementsTextValue -XmlDocument $java_xml -ElementPath "controller-info.controller-port" -TextValue $contPort
+    Set-XmlElementsTextValue -XmlDocument $java_xml -ElementPath "controller-info.controller-ssl-enabled" -TextValue $contSSLEnabled
+    Set-XmlElementsTextValue -XmlDocument $java_xml -ElementPath "controller-info.account-access-key" -TextValue $accAccessKey
+    Set-XmlElementsTextValue -XmlDocument $java_xml -ElementPath "controller-info.application-name" -TextValue $appName
+    Set-XmlElementsTextValue -XmlDocument $java_xml -ElementPath "controller-info.tier-name" -TextValue $tierName
+    Set-XmlElementsTextValue -XmlDocument $java_xml -ElementPath "controller-info.node-name" -TextValue $nodeName
+    [System.Xml.XmlWriter] $XmlWriter = [System.Xml.XmlWriter]::Create($java_config, $XmlSettings)
+    $machine_xml.Save($XmlWriter)
+    $XmlWriter.Flush()
+    $XmlWriter.Close()
+}
 
 # Modifying the dotnet agent conf file settings
 $dotnet_config = "$scriptDir\AppDynamics\dotnet-config.xml"
@@ -272,6 +335,29 @@ IF ([System.IO.File]::Exists($analytics_config)) {
 Write-Output "--- Finished modifying the files ---"
 Write-Output "------ Starting Installations ------"
 
+# Installing the network agent
+IF ([System.IO.File]::Exists($NetViz_msi_path)) {
+    $NetVizAgentApp = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -eq "AppDynamics NetViz Agent" } -ErrorAction SilentlyContinue
+    if (-Not ($null -eq $NetVizAgentApp)) {
+        Write-Output "Existing NetViz Agent Found... UNINSTALLING BEFORE NEW INSTALL..."
+        $NetVizAgentApp.Uninstall()
+    }
+    
+    Write-Output "Installing the AppDynamics NetViz Agent"
+    $params = "/I $NetViz_msi_path /q /norestart /lv $scriptDir\_Agent-NetViz-Installer.log"
+    Start-Process  msiexec.exe -Wait -ArgumentList $params
+    $NetViz_service_path = "$env:ProgramFiles\AppDynamics\Network Visibility Agent\install.bat"
+    IF ([System.IO.File]::Exists($NetViz_service_path)) {
+        Write-Output "Installing AppDynamics NetViz Service"
+        Start-Process -Wait $NetViz_service_path
+    }
+    ELSE {
+        Write-Output "NetViz service installer path not found here $NetViz_service_path"
+    }
+}
+ELSE {
+    Write-Output "NetViz installer not found at $NetViz_msi_path"
+}
 
 # Installing the machine agent
 IF ([System.IO.File]::Exists($machine_config)) {
@@ -305,7 +391,15 @@ ELSE {
     Write-Output "Machine config file not found in AppDynamics directory - not installing machine agent"
 }
 
-
+# Installing the java agent
+IF ([System.IO.File]::Exists($java_config)) {
+    $java_agent_home = "$env:ProgramFiles\AppDynamics\javaagent"
+    Write-Output "Copying java agent files to $java_agent_home"
+    Robocopy $scriptDir\AppDynamics\javaagent $java_agent_home /E /NFL /NDL /NJH /NP /NS /NC
+}
+ELSE {
+    Write-Output "Java agent jar file not found in AppDynamics directory - not installing java agent"
+}
 
 # Installing the dotnet agent
 # Gets the specified registry value or $null if it is missing
