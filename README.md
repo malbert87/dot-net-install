@@ -23,13 +23,13 @@ Modify these files if you need to change anything additional outside of configs.
 Right-click Installer.bat 'Run as Administrator'
 
 NOTE - Machine Agent will be copied to C:\Program Files\AppDynamics\machineagent where all other installations are defaulted.
-NOTE - Java Agent will be copied to C:\Program Files\AppDynamics\javaagent where all other installations are defaulted
 
-Validate 3 Services are installed
+
+Validate 2 Services are installed
 
 - AppDynamics Agent Coordinator
 - AppDynamics Machine Agent
 
 Restart applications
 
-Validate traffic is reporting to Controller and agents are healthy (server / network / analytics)
+Validate traffic is reporting to Controller and agents are healthy (server / analytics)
